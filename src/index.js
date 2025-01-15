@@ -1,8 +1,8 @@
-const  cron = require('node-cron');
+const cron = require('node-cron');
 const Cloudflare = require('cloudflare');
 const getPublicIp = require('./lib/getPublicIp');
-if(process.env.NODE_ENV !== 'production'){
-    require('dotenv').config({ path: ['.env.local', '.env'] });
+if (process.env.NODE_ENV !== 'production') {
+    require('dotenv').config({path: ['.env.local', '.env']});
 }
 
 const CLOUDFLARE_API_KEY = process.env.CLOUDFLARE_API_KEY;
@@ -11,28 +11,23 @@ const DOMAIN = process.env.DOMAIN;
 
 const lastIp = null;
 
-
-
 const updateCloudflare = async (ip_ = undefined) => {
-    let ip =await getPublicIp.get();
-     if(ip === lastIp){
-        console.log('IP has not changed');
-        return false;
-     }
+    let ip = await getPublicIp.get();
+    if (ip === lastIp) return;
     const client = new Cloudflare({
         defaultHeaders: {
             'Authorization': `Bearer ${CLOUDFLARE_API_KEY}`
         }
     });
     for await (const recordResponse of
-        client.dns.records.list({ zone_id: ZONE_ID })) {
-        if(recordResponse?.name === DOMAIN){
+        client.dns.records.list({zone_id: ZONE_ID})) {
+        if (recordResponse?.name === DOMAIN) {
             await client.dns.records.edit(recordResponse.id, {
                 content: ip,
                 zone_id: ZONE_ID,
                 proxied: true,
             });
-            return true;
+            return;
         }
     }
     throw new Error('Domain record not found');
